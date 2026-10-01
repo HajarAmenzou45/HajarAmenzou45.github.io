@@ -61,6 +61,9 @@ nav{display:flex;align-items:center;justify-content:space-between;height:72px}
 .menu{display:flex;gap:2rem;list-style:none;margin:0;padding:0}
 .menu a{text-decoration:none;font-weight:600;color:var(--muted)}
 .menu a:hover,.menu a.on{color:var(--plum)}
+.menu{margin-left:auto}
+.lang{order:3;margin-left:1.75rem;border:1.5px solid var(--line);background:var(--card);color:var(--plum);font:700 .85rem var(--font);letter-spacing:.5px;padding:.45rem .8rem;border-radius:999px;cursor:pointer}
+.lang:hover{border-color:var(--primary)}
 .burger{display:none;background:none;border:0;padding:.5rem;cursor:pointer;color:var(--ink)}
 
 .hero{position:relative;overflow:hidden;background:
@@ -225,7 +228,8 @@ footer .logo{display:inline-block;margin-bottom:.5rem;color:var(--ink)}
   .menu{position:fixed;inset:72px 0 auto 0;flex-direction:column;gap:0;background:var(--bg);border-bottom:1px solid var(--line);padding:.5rem 1.5rem 1rem;display:none}
   .menu.open{display:flex}
   .menu a{display:block;padding:.75rem 0}
-  .burger{display:block}
+  .burger{display:block;order:4}
+  .lang{margin-left:auto;margin-right:.5rem}
   .hero-grid,.about,.contact{grid-template-columns:1fr}
   .hero-grid{padding:2.5rem 0 6rem;text-align:center}
   .hero p.intro{margin-inline:auto}
@@ -296,6 +300,7 @@ footer .logo{display:inline-block;margin-bottom:.5rem;color:var(--ink)}
     <button class="burger" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="menu">
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
     </button>
+    <button class="lang" id="langBtn" type="button" aria-label="View the site in English">EN</button>
     <ul class="menu" id="menu">
       <li><a href="#accueil" class="on">Accueil</a></li>
       <li><a href="#apropos">À propos</a></li>
@@ -634,10 +639,14 @@ const links=[...menu.querySelectorAll('a')];
 const secIO=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.toggle('on',l.getAttribute('href')==='#'+e.target.id))}}),{rootMargin:'-45% 0px -50% 0px'});
 ['accueil','apropos','competences','projets','parcours','contact'].forEach(id=>{const s=document.getElementById(id);if(s)secIO.observe(s)});
 
-const roles=['Étudiante ingénieure en informatique','Développeuse backend Java','Passionnée de data'];
-if(!matchMedia('(prefers-reduced-motion: reduce)').matches){let r=0,c=roles[0].length,del=true;const el=document.getElementById('typed');
-  setTimeout(function tick(){if(del){c--;if(c===0){del=false;r=(r+1)%roles.length}}else{c++;if(c===roles[r].length){del=true;el.textContent=roles[r];return setTimeout(tick,2000)}}
-  el.textContent=roles[r].slice(0,c);setTimeout(tick,del?35:75)},2000);}
+const rolesFR=['Étudiante ingénieure en informatique','Développeuse backend Java','Passionnée de data'];
+const typedEl=document.getElementById('typed');let typedTimer=null;
+function typedRestart(){clearTimeout(typedTimer);const roles=rolesFR.map(T);typedEl.textContent=roles[0];
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  let r=0,c=roles[0].length,del=true;
+  function tick(){if(del){c--;if(c===0){del=false;r=(r+1)%roles.length}}else{c++;if(c===roles[r].length){del=true;typedEl.textContent=roles[r];typedTimer=setTimeout(tick,2000);return}}
+    typedEl.textContent=roles[r].slice(0,c);typedTimer=setTimeout(tick,del?35:75)}
+  typedTimer=setTimeout(tick,2000)}
 
 const btns=document.querySelectorAll('.filters button');
 btns.forEach(b=>b.addEventListener('click',()=>{btns.forEach(x=>x.setAttribute('aria-pressed',x===b));const f=b.dataset.f;
@@ -652,7 +661,7 @@ async function copyText(v){try{await navigator.clipboard.writeText(v);return tru
   const ta=document.createElement('textarea');ta.value=v;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
   let ok=false;try{ok=document.execCommand('copy')}catch(_){};ta.remove();return ok}}
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-copy]');if(!b)return;
-  const ok=await copyText(b.dataset.copy);toast(ok?'Copié : '+b.dataset.copy:'Copie impossible, notez : '+b.dataset.copy)});
+  const ok=await copyText(b.dataset.copy);toast(ok?T('Copié : ')+b.dataset.copy:T('Copie impossible, notez : ')+b.dataset.copy)});
 
 // Défilement fiable vers les sections
 function goTo(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'})}
@@ -674,16 +683,16 @@ document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const m=docum
 const cform=document.getElementById('cform'),sendBtn=document.getElementById('sendBtn'),fmsg=document.getElementById('fmsg');
 cform.addEventListener('submit',async e=>{e.preventDefault();const d=new FormData(cform);
   if(d.get('_honey'))return;
-  sendBtn.disabled=true;sendBtn.textContent='Envoi en cours…';fmsg.className='fmsg';fmsg.textContent='';
+  sendBtn.disabled=true;sendBtn.textContent=T('Envoi en cours…');fmsg.className='fmsg';fmsg.textContent='';
   try{
     const r=await fetch('https://formsubmit.co/ajax/hajaramenzou45@gmail.com',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},
       body:JSON.stringify({Nom:d.get('nom'),Email:d.get('email'),Sujet:d.get('sujet'),Message:d.get('message'),_replyto:d.get('email'),_subject:'Portfolio : '+d.get('sujet'),_template:'table'})});
     const j=await r.json().catch(()=>({}));
     if(!r.ok||j.success==='false'||j.success===false)throw new Error(j.message||'send failed');
-    fmsg.className='fmsg ok';fmsg.textContent='Merci ! Votre message a bien été envoyé. Je vous répondrai rapidement.';cform.reset();
+    fmsg.className='fmsg ok';fmsg.textContent=T('Merci ! Votre message a bien été envoyé. Je vous répondrai rapidement.');cform.reset();
   }catch(err){
-    fmsg.className='fmsg err';fmsg.textContent="L'envoi n'a pas abouti. Vous pouvez m'écrire directement à hajaramenzou45@gmail.com.";
-  }finally{sendBtn.disabled=false;sendBtn.textContent='Envoyer le message'}
+    fmsg.className='fmsg err';fmsg.textContent=T("L'envoi n'a pas abouti. Vous pouvez m'écrire directement à hajaramenzou45@gmail.com.");
+  }finally{sendBtn.disabled=false;sendBtn.textContent=T('Envoyer le message')}
 });
 
 // CV : téléchargement
@@ -693,9 +702,90 @@ if(window.claude&&claude.use){claude.use("downloads").then(d=>{downloads=d}).cat
 document.getElementById('cvDl').addEventListener('click',async()=>{
   const bin=atob(CV_B64),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
   const blob=new Blob([bytes],{type:'application/pdf'});
-  if(downloads){try{await downloads.save({filename:'Hajar_Amenzou_CV.pdf',data:blob});toast('CV téléchargé')}catch(err){if(err&&err.code!=='declined')toast('Téléchargement indisponible ici')}}
-  else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Hajar_Amenzou_CV.pdf';document.body.appendChild(a);a.click();a.remove();toast('CV téléchargé')}
+  if(downloads){try{await downloads.save({filename:'Hajar_Amenzou_CV.pdf',data:blob});toast(T('CV téléchargé'))}catch(err){if(err&&err.code!=='declined')toast(T('Téléchargement indisponible ici'))}}
+  else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='Hajar_Amenzou_CV.pdf';document.body.appendChild(a);a.click();a.remove();toast(T('CV téléchargé'))}
 });
+// ===== Traduction FR / EN =====
+const EN={
+"Accueil":"Home","À propos":"About","Compétences":"Skills","Projets":"Projects","Parcours":"Journey","Contact":"Contact",
+"Salut, je suis":"Hi, I'm","Étudiante ingénieure en informatique":"Computer engineering student",
+"Étudiante en cycle d'ingénieur à l'ISGA Rabat, je développe des applications web et backend avec Java Spring Boot, et je m'intéresse de près à la data et au Big Data.":"Engineering student at ISGA Rabat, I build web and backend applications with Java Spring Boot, and I'm especially interested in data and Big Data.",
+"Voir mon CV":"View my resume","Me contacter":"Contact me","Cycle ingénieur":"Engineering degree","Projets réalisés":"Projects completed","Technologies":"Technologies","Langues":"Languages",
+"En bref":"At a glance","Nom":"Name","Ville":"City","Salé, Maroc":"Salé, Morocco","Formation":"Education","Cycle ingénieur informatique, ISGA Rabat":"Computer engineering degree, ISGA Rabat",
+"Arabe (courant), Français (bon niveau), Anglais (bien)":"Arabic (fluent), French (good level), English (good)","Domaines":"Fields","Développement backend et data":"Backend development and data",
+"À propos de moi":"About me",
+"Je suis étudiante en ingénierie informatique, avec des compétences en développement web et backend. Ce qui me passionne particulièrement, c'est le monde de la data : l'analyse de données et le Big Data.":"I'm a computer engineering student with skills in web and backend development. What I'm most passionate about is the world of data: data analysis and Big Data.",
+"Qualités":"Strengths","Motivation et discipline":"Motivation and discipline","Apprentissage rapide":"Fast learner","Communication et présentation":"Communication and presentation","Organisation et autonomie":"Organization and autonomy","Esprit d'équipe":"Team spirit",
+"En dehors du code":"Beyond code","Voyage":"Travel","Photographie":"Photography","Développement personnel":"Personal growth","Partage de connaissances":"Knowledge sharing",
+"Ce que je fais":"What I do","Mes domaines":"My fields","Développement backend":"Backend development",
+"API REST et microservices avec Spring Boot, bases de données MySQL et Oracle.":"REST APIs and microservices with Spring Boot, MySQL and Oracle databases.",
+"Développement web":"Web development","Sites et interfaces avec HTML, CSS, JavaScript, Angular et Laravel.":"Websites and interfaces with HTML, CSS, JavaScript, Angular and Laravel.",
+"Data et analyse":"Data and analysis","Analyse de données avec Python, Pandas, Jupyter et SPSS. Mon domaine de prédilection.":"Data analysis with Python, Pandas, Jupyter and SPSS. My favorite field.",
+"Systèmes et déploiement":"Systems and deployment","Serveurs Linux, Docker, Jenkins et conception UML des applications.":"Linux servers, Docker, Jenkins and UML application design.",
+"Mes outils":"My tools","Compétences techniques":"Technical skills","Langages":"Languages","Frameworks et bibliothèques":"Frameworks and libraries","Bases de données":"Databases",
+"DevOps et outils":"DevOps and tools","Systèmes et réseaux":"Systems and networks","Conception":"Design","POO":"OOP",
+"Mes réalisations":"My work","Du stage en entreprise aux projets académiques.":"From my internship to academic projects.",
+"Tous":"All","Java et Python":"Java and Python","Systèmes et conception":"Systems and design",
+"Stage · Al Barid Bank · Juin – Juillet 2026":"Internship · Al Barid Bank · June – July 2026",
+"Back office de compensation bancaire":"Banking clearing back office",
+"Application interne de gestion des virements de compensation SRBM : import et export Excel, gestion des bénéficiaires et traçabilité des opérations. Architecture en microservices Spring Boot derrière une API Gateway, avec un frontend Angular.":"Internal application for managing SRBM clearing transfers: Excel import and export, beneficiary management and operation tracking. Spring Boot microservices architecture behind an API Gateway, with an Angular frontend.",
+"Ce que j'ai réalisé":"What I built",
+"Authentification sécurisée avec access token de courte durée et refresh token à rotation, renouvelé automatiquement côté Angular.":"Secure authentication with short-lived access tokens and rotating refresh tokens, renewed automatically on the Angular side.",
+"Résolution des erreurs CORS en centralisant la configuration dans l'API Gateway.":"Fixed CORS errors by centralizing the configuration in the API Gateway.",
+"Passage de tous les appels du frontend par la Gateway, avec ajout des routes manquantes (état des virements, import Excel).":"Routed all frontend calls through the Gateway and added the missing routes (transfer status, Excel import).",
+"Conteneurisation des microservices avec Docker Compose.":"Containerized the microservices with Docker Compose.",
+"Pipeline Jenkins qui compile et déploie automatiquement le backend et le frontend.":"Jenkins pipeline that automatically builds and deploys the backend and frontend.",
+"Système intelligent de gestion de parking":"Smart parking management system",
+"Backend en architecture en couches avec API REST pour gérer utilisateurs, véhicules, places, tickets et paiements. Base MySQL modélisée avec contraintes, endpoints testés avec Postman.":"Layered backend with a REST API to manage users, vehicles, spots, tickets and payments. MySQL database modeled with constraints, endpoints tested with Postman.",
+"Simulation intelligente de trafic routier avec interface JavaFX, basée sur les threads, le multithreading et la synchronisation.":"Smart road traffic simulation with a JavaFX interface, built on threads, multithreading and synchronization.",
+"Java · POO":"Java · OOP","Système e-commerce":"E-commerce system",
+"Application Java orientée objet pour gérer les produits, les utilisateurs et les commandes.":"Object-oriented Java application to manage products, users and orders.",
+"Site de recettes culinaires":"Recipe website","Site organisé par recettes et catégories, avec JavaScript pour rendre la navigation plus interactive.":"Website organized by recipes and categories, with JavaScript for more interactive browsing.",
+"Site de vente de fleurs":"Flower shop website","Site web statique au design simple et attractif pour présenter et vendre des fleurs.":"Static website with a simple, attractive design to showcase and sell flowers.",
+"Jeu de devinette":"Guessing game","Mini-jeu interactif en console, avec des tests unitaires automatisés.":"Interactive console mini-game with automated unit tests.",
+"Systèmes":"Systems","Serveur Ubuntu multi-services":"Multi-service Ubuntu server",
+"Mise en place et configuration d'Apache, DNS, HTTPS, Postfix et Samba sur Ubuntu Server.":"Set up and configured Apache, DNS, HTTPS, Postfix and Samba on Ubuntu Server.",
+"Conception UML":"UML design","Gestion d'un restaurant":"Restaurant management",
+"Modélisation de la gestion des menus, commandes et stock avec diagrammes de cas d'utilisation, de séquence, d'activités et de classes.":"Modeling of menu, order and stock management with use case, sequence, activity and class diagrams.",
+"Mon parcours":"My journey","Expérience et formation":"Experience and education","Juin – Juillet 2026":"June – July 2026","Stage":"Internship",
+"Stagiaire développeuse full stack":"Full stack developer intern",
+"Développement d'une application de compensation bancaire en microservices Spring Boot et Angular : authentification JWT avec refresh token, API Gateway, intégration Oracle, conteneurisation Docker et pipeline Jenkins.":"Development of a banking clearing application with Spring Boot microservices and Angular: JWT authentication with refresh tokens, API Gateway, Oracle integration, Docker containerization and a Jenkins pipeline.",
+"2025 – Présent":"2025 – Present","Cycle d'ingénieur en informatique":"Computer engineering degree",
+"Formation d'ingénieur reconnue par l'accréditation européenne EUR-ACE®.":"Engineering program recognized by the European EUR-ACE® accreditation.",
+"Formation en informatique, 1ʳᵉ et 2ᵉ année":"Computer science program, 1st and 2nd year","Diplôme":"Diploma",
+"Baccalauréat Sciences Physiques et Chimie":"High school diploma in Physics and Chemistry",
+"Restons en contact":"Let's stay in touch",
+"Une question, une idée de projet ou simplement envie d'échanger ? Écrivez-moi, je serai ravie de vous répondre.":"A question, a project idea or just want to chat? Write to me, I'll be happy to reply.",
+"Localisation":"Location","Sujet":"Subject","Envoyer le message":"Send message",
+"Choisissez le moyen qui vous convient.":"Choose whatever works best for you.","Copier":"Copy","Écrire":"Write","Ouvrir":"Open","Écrire un message":"Write a message",
+"Mon CV":"My resume","Aperçu de mon CV. Vous pouvez le télécharger en PDF.":"Preview of my resume. You can download it as a PDF.","Télécharger le PDF":"Download PDF","Fermer":"Close",
+"Navigation principale":"Main navigation","Hajar Amenzou, accueil":"Hajar Amenzou, home","Ouvrir le menu":"Open menu","Filtrer les projets":"Filter projects",
+"CV de Hajar Amenzou":"Hajar Amenzou's resume","Téléphone":"Phone",
+// textes du script
+"Développeuse backend Java":"Java backend developer","Passionnée de data":"Passionate about data",
+"Copié : ":"Copied: ","Copie impossible, notez : ":"Couldn't copy, please note: ","Envoi en cours…":"Sending…",
+"Merci ! Votre message a bien été envoyé. Je vous répondrai rapidement.":"Thank you! Your message has been sent. I'll get back to you soon.",
+"L'envoi n'a pas abouti. Vous pouvez m'écrire directement à hajaramenzou45@gmail.com.":"The message couldn't be sent. You can email me directly at hajaramenzou45@gmail.com.",
+"CV téléchargé":"Resume downloaded","Téléchargement indisponible ici":"Download unavailable here",
+"Hajar Amenzou — Étudiante ingénieure en informatique":"Hajar Amenzou — Computer engineering student"
+};
+let LANG='fr';
+const T=s=>LANG==='en'&&EN[s]?EN[s]:s;
+const ATTRS=['aria-label','alt','placeholder'];
+function applyLang(l){
+  LANG=l;document.documentElement.lang=l;
+  const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentElement;return(!p||p.closest('script,style,svg,#typed,.fmsg,.toast'))?2:(n.nodeValue.trim()?1:2)}});
+  while(w.nextNode()){const n=w.currentNode;if(n.__fr===undefined)n.__fr=n.nodeValue;const k=n.__fr.trim();n.nodeValue=(l==='en'&&EN[k])?n.__fr.replace(k,EN[k]):n.__fr}
+  document.querySelectorAll(ATTRS.map(a=>'['+a+']').join(',')).forEach(e=>{ATTRS.forEach(a=>{const v=e.getAttribute(a);if(v==null)return;const key='fr_'+a.replace('-','_');if(!e.dataset[key])e.dataset[key]=v;const fr=e.dataset[key];e.setAttribute(a,(l==='en'&&EN[fr])?EN[fr]:fr)})});
+  if(!document.__frTitle)document.__frTitle=document.title;document.title=T(document.__frTitle);
+  const b=document.getElementById('langBtn');if(b){b.textContent=l==='en'?'FR':'EN';b.setAttribute('aria-label',l==='en'?'Voir le site en français':'View the site in English')}
+  if(typeof typedRestart==='function')typedRestart();
+  try{localStorage.setItem('lang',l)}catch(e){}
+}
+document.getElementById('langBtn').addEventListener('click',()=>applyLang(LANG==='en'?'fr':'en'));
+
+let startLang='fr';try{startLang=localStorage.getItem('lang')||'fr'}catch(e){}
+applyLang(startLang);
 </script>
 </body>
 </html>
